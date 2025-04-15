@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { 
   FaUser, 
   FaStore, 
@@ -12,11 +11,12 @@ import {
   FaCog, 
   FaSignOutAlt 
 } from 'react-icons/fa';
+import { isAuthenticated, getCurrentUser } from '../utils/helpers';
 
-function Dashboard() {
+function Dashboard({ activeTab = 'overview' }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [currentTab, setCurrentTab] = useState(activeTab);
   
   useEffect(() => {
     // Check for user in localStorage
@@ -25,24 +25,12 @@ function Dashboard() {
       setUser(JSON.parse(storedUser));
     }
     setLoading(false);
-    
-    // Fetch latest user data
-    const fetchUserData = async () => {
-      try {
-        const userId = JSON.parse(storedUser).id;
-        const response = await axios.get(`/api/users/${userId}`);
-        setUser(response.data.data);
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-    
-    if (storedUser) {
-      fetchUserData();
-    }
   }, []);
+  
+  useEffect(() => {
+    // Update current tab when activeTab prop changes
+    setCurrentTab(activeTab);
+  }, [activeTab]);
   
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -56,11 +44,18 @@ function Dashboard() {
   }
   
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="container">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
   
   const renderContent = () => {
-    switch (activeTab) {
+    switch (currentTab) {
       case 'overview':
         return <DashboardOverview user={user} />;
       case 'profile':
@@ -97,24 +92,24 @@ function Dashboard() {
               <ul>
                 <li>
                   <a 
-                    className={activeTab === 'overview' ? 'active' : ''} 
-                    onClick={() => setActiveTab('overview')}
+                    className={currentTab === 'overview' ? 'active' : ''} 
+                    onClick={() => setCurrentTab('overview')}
                   >
                     <FaChartLine /> Dashboard
                   </a>
                 </li>
                 <li>
                   <a 
-                    className={activeTab === 'profile' ? 'active' : ''} 
-                    onClick={() => setActiveTab('profile')}
+                    className={currentTab === 'profile' ? 'active' : ''} 
+                    onClick={() => setCurrentTab('profile')}
                   >
                     <FaUser /> My Profile
                   </a>
                 </li>
                 <li>
                   <a 
-                    className={activeTab === 'orders' ? 'active' : ''} 
-                    onClick={() => setActiveTab('orders')}
+                    className={currentTab === 'orders' ? 'active' : ''} 
+                    onClick={() => setCurrentTab('orders')}
                   >
                     <FaClipboardList /> Orders
                   </a>
@@ -123,8 +118,8 @@ function Dashboard() {
                 {user.user_type === 'business' && (
                   <li>
                     <a 
-                      className={activeTab === 'inventory' ? 'active' : ''} 
-                      onClick={() => setActiveTab('inventory')}
+                      className={currentTab === 'inventory' ? 'active' : ''} 
+                      onClick={() => setCurrentTab('inventory')}
                     >
                       <FaBoxOpen /> Inventory
                     </a>
@@ -134,8 +129,8 @@ function Dashboard() {
                 {user.user_type === 'customer' && (
                   <li>
                     <a 
-                      className={activeTab === 'wishlist' ? 'active' : ''} 
-                      onClick={() => setActiveTab('wishlist')}
+                      className={currentTab === 'wishlist' ? 'active' : ''} 
+                      onClick={() => setCurrentTab('wishlist')}
                     >
                       <FaHeart /> Wishlist
                     </a>
@@ -144,8 +139,8 @@ function Dashboard() {
                 
                 <li>
                   <a 
-                    className={activeTab === 'settings' ? 'active' : ''} 
-                    onClick={() => setActiveTab('settings')}
+                    className={currentTab === 'settings' ? 'active' : ''} 
+                    onClick={() => setCurrentTab('settings')}
                   >
                     <FaCog /> Account Settings
                   </a>
@@ -267,331 +262,56 @@ function UserProfile({ user }) {
             <label>Account Type</label>
             <p>{user.user_type === 'business' ? 'Business' : 'Customer'}</p>
           </div>
-          <div className="info-group">
-            <label>Member Since</label>
-            <p>{new Date(user.created_at).toLocaleDateString()}</p>
-          </div>
         </div>
-        <button className="edit-button">Edit Profile</button>
+        <button className="btn btn-primary">Edit Profile</button>
       </div>
-      
-      {user.user_type === 'business' && user.profile && (
-        <div className="profile-section">
-          <h2>Business Information</h2>
-          <div className="profile-info">
-            <div className="info-group">
-              <label>Business Name</label>
-              <p>{user.profile.business_name}</p>
-            </div>
-            <div className="info-group">
-              <label>Address</label>
-              <p>{user.profile.address}</p>
-            </div>
-            <div className="info-group">
-              <label>City</label>
-              <p>{user.profile.city}</p>
-            </div>
-            <div className="info-group">
-              <label>Postal Code</label>
-              <p>{user.profile.postal_code}</p>
-            </div>
-            <div className="info-group">
-              <label>Country</label>
-              <p>{user.profile.country}</p>
-            </div>
-            {user.profile.tax_id && (
-              <div className="info-group">
-                <label>Tax ID</label>
-                <p>{user.profile.tax_id}</p>
-              </div>
-            )}
-            {user.profile.website && (
-              <div className="info-group">
-                <label>Website</label>
-                <p><a href={user.profile.website} target="_blank" rel="noopener noreferrer">{user.profile.website}</a></p>
-              </div>
-            )}
-          </div>
-          <button className="edit-button">Edit Business Information</button>
-        </div>
-      )}
-      
-      {user.user_type === 'customer' && user.profile && (
-        <div className="profile-section">
-          <h2>Shipping Information</h2>
-          <div className="profile-info">
-            {user.profile.address ? (
-              <>
-                <div className="info-group">
-                  <label>Address</label>
-                  <p>{user.profile.address}</p>
-                </div>
-                <div className="info-group">
-                  <label>City</label>
-                  <p>{user.profile.city}</p>
-                </div>
-                <div className="info-group">
-                  <label>State/Province</label>
-                  <p>{user.profile.state || 'Not provided'}</p>
-                </div>
-                <div className="info-group">
-                  <label>Postal Code</label>
-                  <p>{user.profile.postal_code}</p>
-                </div>
-                <div className="info-group">
-                  <label>Country</label>
-                  <p>{user.profile.country}</p>
-                </div>
-              </>
-            ) : (
-              <p>No shipping information provided.</p>
-            )}
-          </div>
-          <button className="edit-button">Edit Shipping Information</button>
-        </div>
-      )}
     </div>
   );
 }
 
 // Orders History Component
 function OrdersHistory() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await axios.get('/api/orders');
-        setOrders(response.data.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-        setLoading(false);
-      }
-    };
-    
-    fetchOrders();
-  }, []);
-  
-  if (loading) {
-    return <div className="loading">Loading orders...</div>;
-  }
-  
   return (
     <div className="orders-history">
       <h1>My Orders</h1>
       
-      {orders.length === 0 ? (
-        <div className="empty-state">
-          <p>You haven't placed any orders yet.</p>
-          <Link to="/search" className="button-primary">Shop Now</Link>
-        </div>
-      ) : (
-        <div className="orders-list">
-          {orders.map(order => (
-            <div key={order.id} className="order-card">
-              <div className="order-header">
-                <div className="order-id">Order #{order.id}</div>
-                <div className="order-date">{new Date(order.created_at).toLocaleDateString()}</div>
-                <div className={`order-status status-${order.status}`}>{order.status}</div>
-              </div>
-              <div className="order-items">
-                {order.items.map(item => (
-                  <div key={item.id} className="order-item">
-                    <div className="item-image">
-                      <img src={item.image_url || '/images/placeholder.jpg'} alt={item.title} />
-                    </div>
-                    <div className="item-details">
-                      <div className="item-title">{item.title}</div>
-                      <div className="item-price">${parseFloat(item.price).toFixed(2)}</div>
-                      <div className="item-quantity">Qty: {item.quantity}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="order-footer">
-                <div className="order-total">Total: ${parseFloat(order.total_amount).toFixed(2)}</div>
-                <Link to={`/order/${order.id}`} className="view-order-button">View Details</Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="empty-state">
+        <p>You haven't placed any orders yet.</p>
+        <Link to="/search" className="btn btn-primary">Shop Now</Link>
+      </div>
     </div>
   );
 }
 
 // Inventory Management Component for Business Users
 function InventoryManagement() {
-  const [inventory, setInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        // Get user ID from local storage
-        const userId = JSON.parse(localStorage.getItem('user')).id;
-        const response = await axios.get(`/api/inventory/business/${userId}`);
-        setInventory(response.data.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching inventory:', error);
-        setLoading(false);
-      }
-    };
-    
-    fetchInventory();
-  }, []);
-  
-  if (loading) {
-    return <div className="loading">Loading inventory...</div>;
-  }
-  
   return (
     <div className="inventory-management">
       <h1>Inventory Management</h1>
       
       <div className="inventory-actions">
-        <button className="button-primary">Add New Part</button>
-        <button className="button-secondary">Import Inventory</button>
+        <button className="btn btn-primary">Add New Part</button>
+        <button className="btn btn-secondary">Import Inventory</button>
       </div>
       
-      {inventory.length === 0 ? (
-        <div className="empty-state">
-          <p>You don't have any parts in your inventory yet.</p>
-          <p>Add parts to start selling on our marketplace.</p>
-        </div>
-      ) : (
-        <div className="inventory-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Image</th>
-                <th>Part Name</th>
-                <th>SKU</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Condition</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventory.map(item => (
-                <tr key={item.id}>
-                  <td>
-                    <img 
-                      src={item.part.image_url || '/images/placeholder.jpg'} 
-                      alt={item.part.title}
-                      className="part-thumbnail"
-                    />
-                  </td>
-                  <td>{item.part.title}</td>
-                  <td>{item.part.sku}</td>
-                  <td>${parseFloat(item.price).toFixed(2)}</td>
-                  <td>{item.quantity}</td>
-                  <td>{item.condition}</td>
-                  <td>
-                    <span className={`status ${item.quantity > 0 ? 'active' : 'inactive'}`}>
-                      {item.quantity > 0 ? 'Active' : 'Out of Stock'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="edit-button">Edit</button>
-                      <button className="delete-button">Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="empty-state">
+        <p>You don't have any parts in your inventory yet.</p>
+        <p>Add parts to start selling on our marketplace.</p>
+      </div>
     </div>
   );
 }
 
 // Wishlist Component for Customer Users
 function Wishlist() {
-  const [wishlist, setWishlist] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        const response = await axios.get('/api/wishlist');
-        setWishlist(response.data.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching wishlist:', error);
-        setLoading(false);
-      }
-    };
-    
-    fetchWishlist();
-  }, []);
-  
-  const removeFromWishlist = async (id) => {
-    try {
-      await axios.delete(`/api/wishlist/${id}`);
-      setWishlist(wishlist.filter(item => item.id !== id));
-    } catch (error) {
-      console.error('Error removing from wishlist:', error);
-    }
-  };
-  
-  if (loading) {
-    return <div className="loading">Loading wishlist...</div>;
-  }
-  
   return (
     <div className="wishlist">
       <h1>My Wishlist</h1>
       
-      {wishlist.length === 0 ? (
-        <div className="empty-state">
-          <p>Your wishlist is empty.</p>
-          <Link to="/search" className="button-primary">Shop Now</Link>
-        </div>
-      ) : (
-        <div className="wishlist-grid">
-          {wishlist.map(item => (
-            <div key={item.id} className="wishlist-card">
-              <button 
-                className="remove-button" 
-                onClick={() => removeFromWishlist(item.id)}
-                title="Remove from wishlist"
-              >
-                &times;
-              </button>
-              <div className="wishlist-image">
-                <img src={item.part.image_url || '/images/placeholder.jpg'} alt={item.part.title} />
-              </div>
-              <div className="wishlist-details">
-                <h3 className="wishlist-title">
-                  <Link to={`/part/${item.part.id}`}>{item.part.title}</Link>
-                </h3>
-                <div className="wishlist-price">${parseFloat(item.price).toFixed(2)}</div>
-                <div className="wishlist-status">
-                  {item.in_stock ? (
-                    <span className="in-stock">In Stock</span>
-                  ) : (
-                    <span className="out-of-stock">Out of Stock</span>
-                  )}
-                </div>
-              </div>
-              <div className="wishlist-actions">
-                {item.in_stock && (
-                  <button className="add-to-cart-button">Add to Cart</button>
-                )}
-                <Link to={`/part/${item.part.id}`} className="view-details-button">View Details</Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="empty-state">
+        <p>Your wishlist is empty.</p>
+        <Link to="/search" className="btn btn-primary">Shop Now</Link>
+      </div>
     </div>
   );
 }
@@ -612,7 +332,7 @@ function AccountSettings() {
     }));
   };
   
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (formData.new_password !== formData.confirm_password) {
@@ -620,22 +340,13 @@ function AccountSettings() {
       return;
     }
     
-    try {
-      await axios.post('/api/users/change-password', {
-        current_password: formData.current_password,
-        new_password: formData.new_password
-      });
-      
-      alert('Password changed successfully');
-      setFormData({
-        current_password: '',
-        new_password: '',
-        confirm_password: ''
-      });
-    } catch (error) {
-      alert('Error changing password. Please try again.');
-      console.error('Error changing password:', error);
-    }
+    // In a real app, we would call the API to change the password
+    alert('Password changed successfully (this is a demo)');
+    setFormData({
+      current_password: '',
+      new_password: '',
+      confirm_password: ''
+    });
   };
   
   return (
@@ -683,42 +394,8 @@ function AccountSettings() {
             />
           </div>
           
-          <button type="submit" className="button-primary">Change Password</button>
+          <button type="submit" className="btn btn-primary">Change Password</button>
         </form>
-      </div>
-      
-      <div className="settings-section">
-        <h2>Notification Preferences</h2>
-        <div className="settings-form">
-          <div className="form-group checkbox">
-            <label>
-              <input type="checkbox" defaultChecked /> 
-              Email notifications for orders
-            </label>
-          </div>
-          
-          <div className="form-group checkbox">
-            <label>
-              <input type="checkbox" defaultChecked /> 
-              Email notifications for price drops on wishlist items
-            </label>
-          </div>
-          
-          <div className="form-group checkbox">
-            <label>
-              <input type="checkbox" defaultChecked /> 
-              Marketing emails and promotions
-            </label>
-          </div>
-          
-          <button className="button-primary">Save Preferences</button>
-        </div>
-      </div>
-      
-      <div className="settings-section">
-        <h2>Delete Account</h2>
-        <p className="warning">Warning: This action cannot be undone. All your data will be permanently deleted.</p>
-        <button className="button-danger">Delete Account</button>
       </div>
     </div>
   );

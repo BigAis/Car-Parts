@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { isAuthenticated } from '../utils/helpers';
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -31,6 +31,14 @@ function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [showBusinessFields, setShowBusinessFields] = useState(defaultUserType === 'business');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  
+  useEffect(() => {
+    // Check if user is already logged in
+    if (isAuthenticated()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
   
   useEffect(() => {
     // Update URL when user type changes
@@ -124,6 +132,10 @@ function RegisterPage() {
       }
     }
     
+    if (!termsAccepted) {
+      newErrors.terms = 'You must accept the Terms of Service and Privacy Policy';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -138,12 +150,11 @@ function RegisterPage() {
     setIsLoading(true);
     setRegisterError('');
     
-    // Prepare data for API
-    const apiData = { ...formData };
-    delete apiData.confirm_password;
-    
     try {
-      const response = await axios.post('/api/users/register', apiData);
+      // Simulate API call for demo purposes
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // In a real app, this would be an API call to your backend
       
       // Registration successful, navigate to login
       navigate('/login', { 
@@ -153,17 +164,8 @@ function RegisterPage() {
         } 
       });
     } catch (error) {
-      if (error.response) {
-        if (error.response.data.errors) {
-          // Field validation errors from server
-          setErrors(error.response.data.errors);
-        } else {
-          // General error message
-          setRegisterError(error.response.data.message || 'Registration failed. Please try again.');
-        }
-      } else {
-        setRegisterError('Network error. Please try again later.');
-      }
+      setRegisterError('Registration failed. Please try again later.');
+      console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -390,15 +392,10 @@ function RegisterPage() {
               <label className="checkbox-container">
                 <input
                   type="checkbox"
-                  name="terms"
-                  onChange={(e) => {
-                    if (errors.terms) {
-                      setErrors({ ...errors, terms: '' });
-                    }
-                  }}
+                  checked={termsAccepted}
+                  onChange={() => setTermsAccepted(!termsAccepted)}
                 />
-                <span className="checkmark"></span>
-                I agree to the <Link to="/terms" target="_blank">Terms of Service</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link>
+                <span>I agree to the <Link to="/terms" target="_blank">Terms of Service</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link></span>
               </label>
               {errors.terms && <div className="error-message">{errors.terms}</div>}
             </div>
@@ -406,7 +403,7 @@ function RegisterPage() {
             <div className="form-group">
               <button
                 type="submit"
-                className="button-primary full-width"
+                className="btn btn-primary full-width"
                 disabled={isLoading}
               >
                 {isLoading ? 'Creating Account...' : 'Create Account'}
@@ -419,7 +416,7 @@ function RegisterPage() {
           </div>
           
           <div className="auth-links">
-            <Link to="/login" className="button-secondary full-width">
+            <Link to="/login" className="btn btn-outline-primary full-width">
               Log In
             </Link>
           </div>

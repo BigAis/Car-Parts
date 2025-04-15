@@ -8,15 +8,6 @@
 
 // Set headers for API
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-
-// Handle preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
 
 // Include configuration files
 require_once './config/database.php';
@@ -25,6 +16,9 @@ require_once './config/cors.php';
 // Include utility files
 require_once './utils/Response.php';
 require_once './utils/Validator.php';
+
+// Include middleware
+require_once './middleware/AuthMiddleware.php';
 
 // Get request method and URI
 $request_method = $_SERVER['REQUEST_METHOD'];
@@ -35,6 +29,16 @@ $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $base_path = '/api';
 if (strpos($request_uri, $base_path) === 0) {
     $request_uri = substr($request_uri, strlen($base_path));
+}
+
+// Initialize authentication middleware
+$authMiddleware = new AuthMiddleware();
+
+// Process authentication for protected routes
+// If authentication fails, the middleware will return a response and exit
+if (!$authMiddleware->process($request_uri)) {
+    // If process returns false, the middleware has already sent a response
+    exit;
 }
 
 // Route the request to the appropriate handler

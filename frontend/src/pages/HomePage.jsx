@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { FaSearch, FaCar, FaCogs, FaTruck } from 'react-icons/fa';
 
 function HomePage() {
   return (
@@ -8,13 +9,20 @@ function HomePage() {
         <div className="container">
           <h1>Find the Right Car Parts at the Best Prices</h1>
           <p>Search thousands of spare parts from trusted suppliers</p>
-          <div className="search-box">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const searchInput = e.target.elements.searchInput.value;
+            if (searchInput.trim()) {
+              window.location.href = `/search?q=${encodeURIComponent(searchInput)}`;
+            }
+          }} className="search-box">
             <input 
-              type="text" 
+              type="text"
+              name="searchInput"
               placeholder="Search by part name, car model, or part number..." 
             />
-            <button className="search-btn">Search</button>
-          </div>
+            <button type="submit" className="search-btn">Search</button>
+          </form>
         </div>
       </section>
       
@@ -77,13 +85,13 @@ function HomePage() {
         <div className="container">
           <h2>Trusted Suppliers</h2>
           <div className="suppliers-grid">
-            <div className="supplier-card">Supplier 1</div>
-            <div className="supplier-card">Supplier 2</div>
-            <div className="supplier-card">Supplier 3</div>
-            <div className="supplier-card">Supplier 4</div>
+            <div className="supplier-card">AutoParts Inc.</div>
+            <div className="supplier-card">PartsMaster</div>
+            <div className="supplier-card">Elite Components</div>
+            <div className="supplier-card">MotorWorks Supply</div>
           </div>
           <div className="cta-container">
-            <Link to="/register" className="cta-button">Become a Supplier</Link>
+            <Link to="/register?type=business" className="cta-button">Become a Supplier</Link>
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { isAuthenticated } from '../utils/helpers';
 
 function LoginPage() {
   const [formData, setFormData] = useState({
@@ -10,7 +10,27 @@ function LoginPage() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [message, setMessage] = useState('');
+  
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    if (isAuthenticated()) {
+      navigate('/dashboard');
+    }
+    
+    // Display message if redirected from another page
+    if (location.state?.message) {
+      setMessage(location.state.message);
+      
+      // Prefill email if provided (e.g., from registration)
+      if (location.state.email) {
+        setFormData(prev => ({ ...prev, email: location.state.email }));
+      }
+    }
+  }, [navigate, location]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,24 +75,36 @@ function LoginPage() {
     setLoginError('');
     
     try {
-      const response = await axios.post('/api/users/login', formData);
+      // Simulate API call for demo purposes
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store token in localStorage
-      localStorage.setItem('token', response.data.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.data.user));
-      
-      // Redirect based on user type
-      if (response.data.data.user.user_type === 'business') {
-        navigate('/dashboard/business');
+      // For demo, let's use a simple credential check
+      // In a real app, this would be an API call to your backend
+      if (formData.email === 'demo@example.com' && formData.password === 'password') {
+        // Create a mock user and token
+        const mockUser = {
+          id: 1,
+          username: 'demo_user',
+          email: 'demo@example.com',
+          user_type: 'customer',
+          first_name: 'Demo',
+          last_name: 'User',
+          phone: '555-123-4567'
+        };
+        
+        // Store in localStorage
+        localStorage.setItem('token', 'mock-jwt-token');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        // Redirect to dashboard or the page they were trying to access
+        const redirectTo = location.state?.from || '/dashboard';
+        navigate(redirectTo);
       } else {
-        navigate('/');
+        setLoginError('Invalid email or password');
       }
     } catch (error) {
-      if (error.response) {
-        setLoginError(error.response.data.message || 'Login failed. Please check your credentials.');
-      } else {
-        setLoginError('Network error. Please try again later.');
-      }
+      setLoginError('Login failed. Please try again later.');
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +115,12 @@ function LoginPage() {
       <div className="container">
         <div className="auth-form-container">
           <h1>Log In to Your Account</h1>
+          
+          {message && (
+            <div className="alert alert-info">
+              {message}
+            </div>
+          )}
           
           {loginError && (
             <div className="alert alert-error">
@@ -126,7 +164,7 @@ function LoginPage() {
             <div className="form-group">
               <button 
                 type="submit" 
-                className="button-primary full-width"
+                className="btn btn-primary full-width"
                 disabled={isLoading}
               >
                 {isLoading ? 'Logging in...' : 'Log In'}
@@ -139,7 +177,7 @@ function LoginPage() {
           </div>
           
           <div className="auth-links">
-            <Link to="/register" className="button-secondary full-width">
+            <Link to="/register" className="btn btn-outline-primary full-width">
               Register Now
             </Link>
           </div>
@@ -149,6 +187,11 @@ function LoginPage() {
               <p>Are you a Car Parts Supplier?</p>
               <Link to="/register?type=business">Register your Business</Link>
             </div>
+          </div>
+          
+          {/* Demo credentials info - remove in production */}
+          <div className="demo-credentials">
+            <p>Demo credentials: demo@example.com / password</p>
           </div>
         </div>
       </div>

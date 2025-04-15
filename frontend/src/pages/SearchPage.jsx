@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FaFilter, FaSort, FaSearch } from 'react-icons/fa';
-import PartCard from '../components/PartCard';
 
 function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { categoryId } = useParams();
   const queryParams = new URLSearchParams(location.search);
   
   // State for search parameters
@@ -14,174 +13,96 @@ function SearchPage() {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [makes, setMakes] = useState([]);
-  const [models, setModels] = useState([]);
-  
-  // Filter states
-  const [selectedCategory, setSelectedCategory] = useState(queryParams.get('category') || '');
-  const [selectedMake, setSelectedMake] = useState(queryParams.get('make') || '');
-  const [selectedModel, setSelectedModel] = useState(queryParams.get('model') || '');
-  const [priceRange, setPriceRange] = useState({
-    min: queryParams.get('minPrice') || '',
-    max: queryParams.get('maxPrice') || ''
-  });
-  const [sortBy, setSortBy] = useState(queryParams.get('sort') || 'relevance');
-  
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(parseInt(queryParams.get('page') || '1'));
-  const [totalPages, setTotalPages] = useState(1);
-  const [resultsPerPage] = useState(20);
-  
-  // Filter visibility on mobile
   const [showFilters, setShowFilters] = useState(false);
   
-  // Load categories on component mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get('/api/categories');
-        setCategories(response.data.data);
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-      }
-    };
-    
-    const fetchMakes = async () => {
-      try {
-        const response = await axios.get('/api/cars/makes');
-        setMakes(response.data.data);
-      } catch (err) {
-        console.error('Error fetching car makes:', err);
-      }
-    };
-    
-    fetchCategories();
-    fetchMakes();
-  }, []);
-  
-  // Load models when make is selected
-  useEffect(() => {
-    if (selectedMake) {
-      const fetchModels = async () => {
-        try {
-          const response = await axios.get(`/api/cars/models/${selectedMake}`);
-          setModels(response.data.data);
-        } catch (err) {
-          console.error('Error fetching car models:', err);
-        }
-      };
-      
-      fetchModels();
-    } else {
-      setModels([]);
+  // Dummy data for testing
+  const dummyParts = [
+    {
+      id: 1,
+      title: 'Brake Pad Set',
+      description: 'High quality brake pad set suitable for most vehicle makes and models.',
+      price: 49.99,
+      category_name: 'Brake System',
+      image_url: 'https://via.placeholder.com/200',
+      manufacturer: 'BrakeMaster',
+      in_stock: true
+    },
+    {
+      id: 2,
+      title: 'Oil Filter',
+      description: 'Premium oil filter that removes contaminants from engine oil.',
+      price: 12.99,
+      category_name: 'Engine Components',
+      image_url: 'https://via.placeholder.com/200',
+      manufacturer: 'FilterPro',
+      in_stock: true
+    },
+    {
+      id: 3,
+      title: 'Spark Plug Set',
+      description: 'Set of 4 spark plugs for optimal engine performance.',
+      price: 24.95,
+      category_name: 'Electrical System',
+      image_url: 'https://via.placeholder.com/200',
+      manufacturer: 'SparkTech',
+      in_stock: false
     }
-  }, [selectedMake]);
+  ];
   
-  // Search for parts when parameters change
   useEffect(() => {
-    const fetchParts = async () => {
+    // For demo, load dummy data after a short delay
+    const loadData = async () => {
       setLoading(true);
-      setError(null);
-      
       try {
-        const params = {
-          search: searchQuery,
-          page: currentPage,
-          limit: resultsPerPage,
-          sort: sortBy
-        };
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        if (selectedCategory) params.category_id = selectedCategory;
-        if (priceRange.min) params.min_price = priceRange.min;
-        if (priceRange.max) params.max_price = priceRange.max;
-        
-        // Add make/model compatibility filter
-        if (selectedModel) {
-          params.model_id = selectedModel;
+        // Filter by category if categoryId is provided
+        let filteredParts = dummyParts;
+        if (categoryId) {
+          // This is a very simplified approach - in a real app,
+          // you would make an API call with the category filter
+          filteredParts = dummyParts.filter(part => 
+            part.category_name.toLowerCase().includes(categoryId.toLowerCase())
+          );
         }
         
-        const response = await axios.get('/api/parts', { params });
+        // Filter by search query if provided
+        if (searchQuery) {
+          filteredParts = filteredParts.filter(part => 
+            part.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            part.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            part.manufacturer.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
         
-        setParts(response.data.data.parts);
-        setTotalPages(response.data.data.pagination.pages);
+        setParts(filteredParts);
       } catch (err) {
-        console.error('Error fetching parts:', err);
-        setError('Failed to load parts. Please try again.');
+        setError('Failed to load parts. Please try again later.');
+        console.error('Error loading parts:', err);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchParts();
-  }, [searchQuery, currentPage, selectedCategory, selectedModel, priceRange.min, priceRange.max, sortBy]);
+    loadData();
+  }, [categoryId, searchQuery]);
   
-  // Update URL when filters change
-  useEffect(() => {
-    const params = new URLSearchParams();
-    
-    if (searchQuery) params.set('q', searchQuery);
-    if (selectedCategory) params.set('category', selectedCategory);
-    if (selectedMake) params.set('make', selectedMake);
-    if (selectedModel) params.set('model', selectedModel);
-    if (priceRange.min) params.set('minPrice', priceRange.min);
-    if (priceRange.max) params.set('maxPrice', priceRange.max);
-    if (sortBy !== 'relevance') params.set('sort', sortBy);
-    if (currentPage > 1) params.set('page', currentPage.toString());
-    
-    navigate({ search: params.toString() }, { replace: true });
-  }, [navigate, searchQuery, selectedCategory, selectedMake, selectedModel, priceRange, sortBy, currentPage]);
-  
-  // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1); // Reset to first page on new search
-  };
-  
-  // Handle filter changes
-  const handleCategoryChange = (e) => {
-    setSelectedCategory(e.target.value);
-    setCurrentPage(1);
-  };
-  
-  const handleMakeChange = (e) => {
-    setSelectedMake(e.target.value);
-    setSelectedModel(''); // Reset model when make changes
-    setCurrentPage(1);
-  };
-  
-  const handleModelChange = (e) => {
-    setSelectedModel(e.target.value);
-    setCurrentPage(1);
-  };
-  
-  const handlePriceRangeChange = (e) => {
-    const { name, value } = e.target;
-    setPriceRange(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
-  const applyPriceFilter = () => {
-    setCurrentPage(1);
-  };
-  
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
-  };
-  
-  // Pagination handlers
-  const goToPage = (page) => {
-    setCurrentPage(page);
-    window.scrollTo(0, 0);
+    // Update URL with search query
+    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
   
   return (
     <div className="search-page">
       <div className="container">
         <div className="search-header">
-          <h1>Search Results</h1>
+          <h1>
+            {categoryId 
+              ? `${categoryId.charAt(0).toUpperCase() + categoryId.slice(1)} Parts` 
+              : 'Search Results'}
+          </h1>
           
           <form onSubmit={handleSearch} className="search-form">
             <div className="search-input-container">
@@ -208,79 +129,8 @@ function SearchPage() {
         <div className="search-results-container">
           <aside className={`filters-sidebar ${showFilters ? 'show' : ''}`}>
             <div className="filter-section">
-              <h3>Categories</h3>
-              <select
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                className="filter-select"
-              >
-                <option value="">All Categories</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="filter-section">
-              <h3>Car Make</h3>
-              <select
-                value={selectedMake}
-                onChange={handleMakeChange}
-                className="filter-select"
-              >
-                <option value="">All Makes</option>
-                {makes.map(make => (
-                  <option key={make.id} value={make.id}>
-                    {make.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {selectedMake && (
-              <div className="filter-section">
-                <h3>Car Model</h3>
-                <select
-                  value={selectedModel}
-                  onChange={handleModelChange}
-                  className="filter-select"
-                >
-                  <option value="">All Models</option>
-                  {models.map(model => (
-                    <option key={model.id} value={model.id}>
-                      {model.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            <div className="filter-section">
-              <h3>Price Range</h3>
-              <div className="price-inputs">
-                <input
-                  type="number"
-                  name="min"
-                  value={priceRange.min}
-                  onChange={handlePriceRangeChange}
-                  placeholder="Min"
-                  min="0"
-                />
-                <span>to</span>
-                <input
-                  type="number"
-                  name="max"
-                  value={priceRange.max}
-                  onChange={handlePriceRangeChange}
-                  placeholder="Max"
-                  min="0"
-                />
-              </div>
-              <button onClick={applyPriceFilter} className="apply-filter-btn">
-                Apply
-              </button>
+              <h3>Filter Results</h3>
+              <p>Filters would go here in a complete implementation.</p>
             </div>
           </aside>
           
@@ -298,11 +148,7 @@ function SearchPage() {
                 <label htmlFor="sort-select">
                   <FaSort /> Sort by:
                 </label>
-                <select
-                  id="sort-select"
-                  value={sortBy}
-                  onChange={handleSortChange}
-                >
+                <select id="sort-select">
                   <option value="relevance">Relevance</option>
                   <option value="price_asc">Price (Low to High)</option>
                   <option value="price_desc">Price (High to Low)</option>
@@ -316,7 +162,10 @@ function SearchPage() {
             )}
             
             {loading ? (
-              <div className="loading-spinner">Loading...</div>
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading parts...</p>
+              </div>
             ) : parts.length === 0 ? (
               <div className="no-results">
                 <h3>No parts found</h3>
@@ -325,60 +174,40 @@ function SearchPage() {
             ) : (
               <div className="parts-grid">
                 {parts.map(part => (
-                  <PartCard key={part.id} part={part} />
+                  <div key={part.id} className="part-card">
+                    <div className="part-image">
+                      <img src={part.image_url} alt={part.title} />
+                    </div>
+                    <div className="part-details">
+                      <h3 className="part-title">
+                        <a href={`/part/${part.id}`}>{part.title}</a>
+                      </h3>
+                      <div className="part-category">{part.category_name}</div>
+                      <div className="part-manufacturer">
+                        <span>Manufacturer:</span> {part.manufacturer}
+                      </div>
+                      <p className="part-description">{part.description}</p>
+                    </div>
+                    <div className="part-purchase">
+                      <div className="part-price">${part.price.toFixed(2)}</div>
+                      <div className="part-stock">
+                        {part.in_stock ? (
+                          <span className="in-stock">In Stock</span>
+                        ) : (
+                          <span className="out-of-stock">Out of Stock</span>
+                        )}
+                      </div>
+                      <a href={`/part/${part.id}`} className="view-details-button">
+                        View Details
+                      </a>
+                      {part.in_stock && (
+                        <button className="add-to-cart-button">
+                          Add to Cart
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ))}
-              </div>
-            )}
-            
-            {totalPages > 1 && (
-              <div className="pagination">
-                <button
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="page-button"
-                >
-                  Previous
-                </button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ))
-                  .map((page, index, array) => {
-                    // Add ellipsis
-                    if (index > 0 && page - array[index - 1] > 1) {
-                      return (
-                        <React.Fragment key={`ellipsis-${page}`}>
-                          <span className="pagination-ellipsis">...</span>
-                          <button
-                            onClick={() => goToPage(page)}
-                            className={`page-button ${currentPage === page ? 'active' : ''}`}
-                          >
-                            {page}
-                          </button>
-                        </React.Fragment>
-                      );
-                    }
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`page-button ${currentPage === page ? 'active' : ''}`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                
-                <button
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="page-button"
-                >
-                  Next
-                </button>
               </div>
             )}
           </div>
