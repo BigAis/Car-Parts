@@ -1,0 +1,119 @@
+/* Layout Styles */
+
+// Main Container
+.container {
+    width: 100%;
+    max-width: $container-max-width;
+    margin: 0 auto;
+    padding: 0 $spacing-lg;
+    
+    @media (max-width: $mobile) {
+      padding: 0 $spacing-md;
+    }
+  }
+  
+  // Page Sections
+  .section {
+    padding: $spacing-xxl 0;
+    
+    @media (max-width: $mobile) {
+      padding: $spacing-xl 0;
+    }
+    
+    &.section-sm {
+      padding: $spacing-lg 0;
+    }
+    
+    &.section-lg {
+      padding: 60px 0;
+    }
+    
+    &.bg-light {
+      background-color: $background-color;
+    }
+    
+    &.bg-dark {
+      background-color: $secondary-dark;
+      color: $text-white;
+    }
+    
+    &.bg-primary {
+      background-color: $primary-color;
+      color: $text-white;
+    }
+  }
+  
+  // Flex Utility Classes
+  .flex {
+    display: flex;
+    
+    &.flex-wrap {
+      flex-wrap: wrap;
+    }
+    
+    &.flex-column {
+      flex-direction: column;
+    }
+    
+    &.justify-between {
+      justify-content: space-between;
+    }
+    
+    &.justify-center {
+      justify-content: center;
+    }
+    
+    &.justify-end {
+      justify-content: flex-end;
+    }
+    
+    &.align-center {
+      align-items: center;
+    }
+    
+    &.align-start {
+      align-items: flex-start;
+    }
+    
+    &.align-end {
+      align-items: flex-end;
+    }
+    
+    &.gap-sm {
+      gap: $spacing-sm;
+    }
+    
+    &.gap-md {
+      gap: $spacing-md;
+    }
+    
+    &.gap-lg {
+      gap: $spacing-lg;
+    }
+  }
+  
+  // Grids
+  .grid {
+    display: grid;
+    gap: $spacing-lg;
+    
+    &.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+      
+      @media (max-width: $tablet) {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    &.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+      
+      @media (max-width: $desktop) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      @media (max-width: $mobile) {
+        grid-template-columns: 1fr;
+      }
+    }
+}

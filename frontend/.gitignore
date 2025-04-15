@@ -1,0 +1,57 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Built files
+/frontend/dist
+/frontend/build
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# PHP Composer
+/backend/vendor/
+composer.lock
+
+# Logs
+/backend/logs/
+*.log
+
+# User-uploaded content
+/backend/uploads/
+
+# Cache and sessions
+/backend/cache/
+/backend/sessions/
+
+# Testing
+/coverage
+/frontend/coverage
+
+# Temporary files
+*.tmp
+*.temp
+/temp/
+
+# Build artifacts
+.cache/
+.parcel-cache/
+
+# Local development server
+.phpunit.result.cache
